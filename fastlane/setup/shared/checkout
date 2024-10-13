@@ -1,0 +1,32 @@
+import 'setup/shared/load-project-env-vars'
+
+def shared_checkout(options)
+  # Check if the deploy implementation is actually provided
+  shared_throw_user_error("Missing deploy implementation...") unless block_given?
+
+  # Check if the deploy project path is provided
+  shared_throw_user_error("Missing project path") unless options&.dig(:project_path)
+
+  # Check if the project exists
+  project_path = File.expand_path("../#{options[:project_path]}")
+  shared_throw_user_error("#{project_path} does not exist") unless File.exist?(project_path)
+
+  # Override project path with the expanded path
+  options[:project_path] = project_path
+  # Utils for get expand file path with if needs or use options[:project_path] manually
+  options[:get_file_path] = lambda do |file_name|
+    file_path = File.join(options[:project_path], file_name)
+    shared_throw_user_error("File not found: #{file_path}") unless File.exist?(file_path)
+    file_path
+  end
+
+  # Run deploy implementation in the project path
+  Dir.chdir(options[:project_path]) do
+    UI.message ""
+    UI.important "Current directory is: #{Dir.pwd}"
+    # Load project environment variables
+    shared_load_project_env(options)
+    # Run the deploy implementation, see 'setup/deploy-impl-ios' or 'setup/deploy-impl-android'
+    yield(options)
+  end
+end

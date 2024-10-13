@@ -1,0 +1,33 @@
+require 'dotenv'
+
+def load_file(file_path, loader)
+  unless File.exist?(file_path)
+    shared_throw_user_error("Env file not found: #{file_path}")
+  end
+
+  UI.important("Loading env file: #{file_path}")
+  begin
+    content = loader.call(file_path)
+    shared_throw_user_error("Failed to load or parse env file: `#{file_path}`") if content.nil? || (content.respond_to?(:empty?) && content.empty?)
+    content
+  rescue StandardError => e
+    shared_throw_user_error("Loading env file failed: `#{file_path}`", e)
+  end
+end
+
+private_lane :shared_load_project_env do |options|
+  shared_throw_user_error("Missing environment variable: 'ENVFILE'.") unless ENV['ENVFILE']
+
+  [
+   { title: 'Fastlane specifies environment', fileName: '.env.fastlane' },
+   { title: 'Project environment', fileName: ".env.#{ENV['ENVFILE']}" }, 
+  ].each do |env|
+    env_path = options[:get_file_path][env[:fileName]]
+
+    load_file(env_path, Dotenv.method(:load))
+
+    # Optional, to print out the loaded env keys
+    # loaded_env = Dotenv.parse(env_path)
+    # UI.message("#{env[:title]}\n#{loaded_env.keys.join("\n")}")
+  end
+end

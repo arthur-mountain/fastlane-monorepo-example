@@ -1,0 +1,66 @@
+import 'setup/shared/checkout'
+import 'setup/shared/throw-user-error'
+import 'setup/shared/validate-prerequisites'
+
+private_lane :android_deploy_impl do |options|
+  shared_checkout(options) do
+    setup_prerequisites(options)
+    pre_hook(options)
+    bump_version(options)
+    build(options)
+    upload(options)
+    post_hook(options)
+  end
+end
+
+# This lane sets up all necessary prerequisites for the subsequent lanes. 
+# Additionally, it ensures that all required values are present; otherwise, it will throw an error.
+#
+# There are two ways to configure the environment:
+#   1. Manually set up the environment values directly in the options hash and pass them into the respective actions.
+#   2. Use environment variables, which will be automatically loaded by the action.
+#
+# In the final step, the required environment variables are validated.
+private_lane :setup_prerequisites do |options|
+  # Option 1: 
+  #   Manually set up the environment values in the options hash and validate them.
+  #   In the following private_lanes, you need to pass the parameters you injected into 'options' to the respective actions.
+  options[:is_prod] = ENV['ENVFILE'] == 'prod'
+  options[:current_date] = Time.now.strftime("%m%d%H%M")
+  
+  # Option 2: 
+  #   - load required values from env file.
+  #   - setup manually to ENV in this lane, e.g. ENV['YOUR_ENV'] = 'YOUR_VALUE'
+  #
+  #   check the action required env through 'bundle exec fastlane action $YOUR_ACTION'
+  #   For example:
+  #     The required environment variables for 'gralde' action.
+  #     You can run 'bundle exec fastlane action gradle' to get more information about this action.
+
+  # Validate required options and envs through the prerequisites JSON file in your project
+  shared_validate_prerequisites(options)
+end
+
+private_lane :pre_hook do |options|
+  # pre hook for android
+end
+
+private_lane :bump_version do |options|
+  android_set_version_name
+  android_set_version_code
+end
+
+private_lane :build do |options|
+  # clean
+  gradle(task: "clean")
+  # build
+  gradle
+end
+
+private_lane :upload do |options|
+  upload_to_play_store(aab: lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH])
+end
+
+private_lane :post_hook do |options|
+  # post hook for android
+end

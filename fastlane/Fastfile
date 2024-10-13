@@ -1,0 +1,55 @@
+default_platform(:ios)
+
+platform :ios do
+  import 'setup/deploy-impl-ios'
+
+  def cleanup_keychain
+    keychain_name = ENV["MATCH_KEYCHAIN_NAME"].to_s.strip
+    if is_ci? && !keychain_name.empty?
+      UI.message("Deleting Keychain: #{keychain_name}")
+      delete_keychain(name: keychain_name)
+    else
+      UI.message("Skipping keychain cleanup. Either not in CI or keychain name is not set.")
+    end
+  end
+
+  before_all do |lane|
+    setup_ci
+  end
+
+  after_all do |lane|
+    cleanup_keychain
+  end
+
+  error do |lane, exception|
+    cleanup_keychain
+  end
+
+  lane :deploy_dev do |options|
+    ENV['ENVFILE'] = 'dev'
+    ios_deploy_impl(options)
+  end
+
+  lane :deploy_prod do |options|
+    ENV['ENVFILE'] = 'prod'
+    ios_deploy_impl(options)
+  end
+
+  # ...others environments if needs
+end
+
+platform :android do
+  import 'setup/deploy-impl-android'
+
+  lane :deploy_dev do |options|
+    ENV['ENVFILE'] = 'dev'
+    android_deploy_impl(options)
+  end
+
+  lane :deploy_prod do |options|
+    ENV['ENVFILE'] = 'prod'
+    android_deploy_impl(options)
+  end
+
+  # ...others environments if needs
+end

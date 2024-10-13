@@ -1,0 +1,31 @@
+def shared_validate_prerequisites(options)
+  # Read file and validate required options and envs
+  prerequisites_json_file_path = options[:get_file_path]["fastlane-prerequisites-#{ENV['ENVFILE']}.json"]
+  
+  confirmation_message = <<~EOF
+    Prerequisites file not found at #{prerequisites_json_file_path}.
+    The following steps may fail. Do you want to continue?
+  EOF
+  unless File.exist?(prerequisites_json_file_path) || UI.confirm(confirmation_message)
+    shared_throw_user_error("Missing prerequisites file at #{prerequisites_json_file_path}")
+  end
+
+  begin
+    prerequisites_data = JSON.parse(File.read(prerequisites_json_file_path))
+  rescue JSON::ParserError => e
+    shared_throw_user_error("Failed to parse prerequisites file at #{prerequisites_json_file_path}: #{e.message}")
+  end
+
+  # Validate required options
+  required_options = prerequisites_data['required_options'] || []
+  required_options.each do |opt|
+    shared_throw_user_error("Missing required option #{opt}") unless options[opt.to_sym]
+  end
+
+  # Validate required env variables
+  required_envs = prerequisites_data['required_envs'] || []
+  env_file_path = options[:get_file_path][".env.#{ENV['ENVFILE']}"]
+  required_envs.each do |env_var|
+    shared_throw_user_error("Missing required `#{env_var}` field in #{env_file_path}.") if ENV[env_var].to_s.empty?
+  end
+end

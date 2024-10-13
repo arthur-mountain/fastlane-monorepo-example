@@ -1,0 +1,10 @@
+# helper for throw error message and exit
+def shared_throw_user_error(message, exception = nil)
+  full_message = <<~EOF
+    ❌ Error: 
+    Call stack: #{caller[0]}
+    Message: #{exception ? "#{exception.message}\n#{message}" : message}
+  EOF
+  UI.user_error!(full_message)
+end
+
