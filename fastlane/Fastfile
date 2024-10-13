@@ -23,6 +23,7 @@ platform :ios do
 
   error do |lane, exception|
     cleanup_keychain
+    shared_throw_user_error(lane, exception)
   end
 
   lane :deploy_dev do |options|
@@ -40,6 +41,10 @@ end
 
 platform :android do
   import 'setup/deploy-impl-android'
+
+  error do |lane, exception|
+    shared_throw_user_error(lane, exception)
+  end
 
   lane :deploy_dev do |options|
     ENV['ENVFILE'] = 'dev'
