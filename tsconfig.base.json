@@ -1,0 +1,10 @@
+{
+  "$schema": "http://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    // Required compiler options
+    "composite": true,
+    "declaration": true,
+    "moduleResolution": "node"
+    // Other options...
+  }
+}
